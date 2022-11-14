@@ -37,14 +37,7 @@ public class ScreenLockManager: NSObject {
     
     private let kScreenLockIdentifier = "com.salesforce.security.screenlock"
     private var callbackBlock: ScreenLockCallbackBlock? = nil
-    private var backgroundTimestamp: Double = 0
-    
-    private override init() {
-        super.init()
-        NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { [weak self] _ in
-            self?.backgroundTimestamp = Date().timeIntervalSince1970
-        }
-    }
+    private var lastUnlockTimestamp: Double = 0
     
     // MARK: Screen Lock Manager
     
@@ -58,7 +51,7 @@ public class ScreenLockManager: NSObject {
     }
     
     func lockTimeoutExpired(lockTimeout: NSNumber) -> Bool {
-        return (Date().timeIntervalSince1970 - backgroundTimestamp) > lockTimeout.doubleValue * 60
+        return (Date().timeIntervalSince1970 - lastUnlockTimestamp) > lockTimeout.doubleValue * 60
     }
     
     /// Stores the mobile policy for the user.
@@ -214,6 +207,8 @@ public class ScreenLockManager: NSObject {
     }
     
     func unlock() {
+        lastUnlockTimestamp = Date().timeIntervalSince1970
+        
         // Send flow will begin notification
         SFSDKCoreLogger.d(ScreenLockManager.self, message: "Sending screen lock flow completed notification")
         NotificationCenter.default.post(name: Notification.Name(rawValue: kSFScreenLockFlowCompleted), object: nil)
